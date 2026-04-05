@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PredictKE – Kenya's Prediction Market</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0D1B2A;--bg2:#152436;--bg3:#1B2E45;--accent:#00C49A;--accent2:#007A60;
+  --white:#FFFFFF;--off:#C8DDD8;--muted:#7A9E96;--gold:#F5A623;
+  --card:#152436;--card2:#1E3448;--border:#1F3D54;
+  --pol-bg:#1E1A3A;--pol-c:#A89EF5;
+  --eco-bg:#0D2236;--eco-c:#6BB8F0;
+  --sport-bg:#0E2410;--sport-c:#8FCC55;
+  --cult-bg:#2A1F08;--cult-c:#F5C060;
+  --box-bg:#2A0E1A;--box-c:#F090B0;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--white);min-height:100vh}
+
+/* TOP NAV */
+.nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{font-size:18px;font-weight:700;letter-spacing:-0.5px}
+.logo span{color:var(--accent)}
+.wallet-pill{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:13px;color:var(--muted)}
+.wallet-pill b{color:var(--accent)}
+.live-badge{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--accent);font-weight:600;letter-spacing:0.5px}
+.pulse{width:7px;height:7px;background:var(--accent);border-radius:50%;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.2}}
+
+/* HERO BAND */
+.hero{background:var(--bg3);border-bottom:1px solid var(--border);padding:14px 16px}
+.hero-title{font-size:13px;color:var(--muted);margin-bottom:4px}
+.hero-stat{font-size:26px;font-weight:700;color:var(--white)}
+.hero-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.hero-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.hstat{text-align:center}
+
+/* FILTER TABS */
+.tabs{display:flex;gap:0;padding:12px 16px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--border);background:var(--bg2)}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;padding:7px 14px;font-size:13px;cursor:pointer;color:var(--muted);border-radius:20px;border:1px solid transparent;transition:all 0.15s;white-space:nowrap}
+.tab.on{background:var(--accent2);color:var(--white);border-color:var(--accent)}
+
+/* MARKETS */
+.mkts{padding:12px 16px;display:flex;flex-direction:column;gap:10px;max-width:680px;margin:0 auto}
+
+.mcard{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:border-color 0.15s}
+.mcard:hover{border-color:var(--accent2)}
+.mcard.open{border-color:var(--accent)}
+.mcard-body{padding:14px 16px}
+.cat-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cat-tag{font-size:10px;font-weight:700;letter-spacing:0.6px;padding:3px 8px;border-radius:10px}
+.vol-txt{font-size:11px;color:var(--muted)}
+.mq{font-size:15px;font-weight:600;line-height:1.4;color:var(--white);margin-bottom:12px}
+.prob-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.prob-track{flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.prob-fill{height:100%;background:var(--accent);border-radius:4px;transition:width 0.4s}
+.prob-yes{font-size:13px;font-weight:700;color:var(--accent)}
+.prob-no{font-size:13px;font-weight:700;color:#F09595}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.yes-btn,.no-btn{padding:10px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.15s}
+.yes-btn{background:#1D9E75;color:#E1F5EE}
+.no-btn{background:#993C1D;color:#FAECE7}
+.yes-btn:hover,.no-btn:hover{opacity:0.85}
+.closes{font-size:11px;color:var(--muted);text-align:center}
+
+/* TRADE PANEL */
+.trade-panel{background:var(--bg3);border-top:1px solid var(--border);padding:14px 16px}
+.tp-title{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px;letter-spacing:0.5px}
+.context-box{background:var(--bg);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--off);line-height:1.5;margin-bottom:12px}
+.side-row{display:flex;gap:8px;margin-bottom:12px}
+.side-btn{flex:1;padding:9px;border-radius:10px;border:1px solid var(--border);background:transparent;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);transition:all 0.15s}
+.side-btn.yes-sel{background:#1D9E75;color:#E1F5EE;border-color:#1D9E75}
+.side-btn.no-sel{background:#993C1D;color:#FAECE7;border-color:#993C1D}
+.stake-label{font-size:12px;color:var(--muted);margin-bottom:6px}
+.stake-input{width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--white);font-size:15px;outline:none;margin-bottom:12px}
+.stake-input:focus{border-color:var(--accent)}
+.quick-stakes{display:flex;gap:6px;margin-bottom:12px}
+.qs{padding:5px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--off);cursor:pointer}
+.qs:hover{border-color:var(--accent);color:var(--accent)}
+.payout-box{background:var(--bg);border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.prow{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);padding:3px 0}
+.prow b{color:var(--white)}
+.prow.highlight b{color:var(--accent);font-size:15px}
+.confirm-btn{width:100%;padding:12px;background:var(--accent);color:#04342C;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;transition:opacity 0.15s}
+.confirm-btn:hover{opacity:0.9}
+.confirm-btn:disabled{opacity:0.4;cursor:not-allowed}
+
+/* POSITIONS */
+.pos-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+.pos-q{font-size:14px;font-weight:600;color:var(--white);margin-bottom:8px;line-height:1.3}
+.pos-meta{display:flex;flex-wrap:wrap;gap:10px;font-size:12px}
+.pos-side-y{color:#00C49A;font-weight:700}
+.pos-side-n{color:#F09595;font-weight:700}
+.pnl-up{color:#00C49A;font-weight:700}
+.pnl-dn{color:#F09595;font-weight:700}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:#04342C;padding:11px 22px;border-radius:30px;font-size:14px;font-weight:700;opacity:0;transition:all 0.3s;pointer-events:none;z-index:999;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* FOOTER */
+.footer{text-align:center;padding:28px 16px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);margin-top:20px}
+.footer a{color:var(--accent);text-decoration:none}
+
+/* RESOLVED banner */
+.resolved-banner{background:#1A1200;border:1px solid #3D2D00;border-radius:8px;padding:8px 12px;font-size:12px;color:var(--gold);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+
+@media(max-width:480px){
+  .hero-grid{grid-template-columns:repeat(3,1fr)}
+  .mq{font-size:14px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="logo">Predict<span>KE</span></div>
+  <div class="live-badge"><div class="pulse"></div>BETA</div>
+  <div class="wallet-pill">Balance: <b id="bal">KES 5,000</b></div>
+</nav>
+
+<div class="hero">
+  <div class="hero-grid">
+    <div class="hstat">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:3px">Active markets</div>
+      <div style="font-size:20px;font-weight:700" id="mkt-count">12</div>
+    </div>
+    <div class="hstat">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:3px">Total traded</div>
+      <div style="font-size:20px;font-weight:700" id="total-vol">KES 0</div>
+    </div>
+    <div class="hstat">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:3px">Your positions</div>
+      <div style="font-size:20px;font-weight:700" id="pos-count">0</div>
+    </div>
+  </div>
+</div>
+
+<div class="tabs" id="tabs">
+  <div class="tab on" onclick="filter('all',this)">All</div>
+  <div class="tab" onclick="filter('boxing',this)">Boxing</div>
+  <div class="tab" onclick="filter('politics',this)">Politics</div>
+  <div class="tab" onclick="filter('economics',this)">Economics</div>
+  <div class="tab" onclick="filter('sport',this)">Sports</div>
+  <div class="tab" onclick="filter('culture',this)">Culture</div>
+  <div class="tab" onclick="filter('my',this)">My Positions</div>
+</div>
+
+<div class="mkts" id="mkts"></div>
+
+<div class="toast" id="toast"></div>
+
+<div class="footer">
+  PredictKE Beta &mdash; Demo platform. No real money. For feedback: <a href="mailto:hello@predictke.co.ke">hello@predictke.co.ke</a><br>
+  <span style="margin-top:6px;display:block">Share this page to collect feedback from friends</span>
+</div>
+
+<script>
+var balance = 5000;
+var positions = [];
+var openId = null;
+var selectedSide = {};
+var stakeVals = {};
+var activeFilter = 'all';
+var totalVol = 0;
+
+var markets = [
+  {
+    id:1, cat:'boxing',
+    catLabel:'Boxing', catStyle:'background:var(--box-bg);color:var(--box-c)',
+    q:'Will Mbavu Destroyer officially call for a rematch against Majembe within 30 days?',
+    yes:71, vol:2840000,
+    closes:'May 5, 2026',
+    context:'Majembe knocked out Mbavu in Round 4 at Kasarani on April 4. Mbavu walked away with KES 1M from Ruto. Social media is already buzzing with rematch calls. The question is whether Ferdinand Omondi makes it official.',
+    resolved:false
+  },
+  {
+    id:2, cat:'boxing',
+    catLabel:'Boxing', catStyle:'background:var(--box-bg);color:var(--box-c)',
+    q:'Will Oga Obinna organise a Vurugu Fight Night 2 (Majembe rematch) before end of 2026?',
+    yes:58, vol:1620000,
+    closes:'Dec 31, 2026',
+    context:'Vurugu Fight Night was one of the biggest sporting events of 2026, drawing presidential backing and millions in sponsorship. Oga Obinna has strong commercial incentive to run it back.',
+    resolved:false
+  },
+  {
+    id:3, cat:'boxing',
+    catLabel:'Boxing', catStyle:'background:var(--box-bg);color:var(--box-c)',
+    q:'If a rematch happens, will Mbavu Destroyer win?',
+    yes:39, vol:980000,
+    closes:'Dec 31, 2026',
+    context:'Majembe (Potifus Odipo, 21) was the dominant winner. But Mbavu has brand backing, a huge fanbase, and motivation. Crowd favourite does not always mean underdog.',
+    resolved:false
+  },
+  {
+    id:4, cat:'politics',
+    catLabel:'Politics', catStyle:'background:var(--pol-bg);color:var(--pol-c)',
+    q:'Will the fuel scandal result in at least one CS/PS losing their job before May 2026?',
+    yes:74, vol:3200000,
+    closes:'Apr 30, 2026',
+    context:'EPRA DG Kiptoo, KPC MD Joe Sang, and Petroleum PS Liban were arrested over an alleged Saudi fuel diversion scheme. All three have since resigned. Political pressure on the CS is mounting.',
+    resolved:false
+  },
+  {
+    id:5, cat:'politics',
+    catLabel:'Politics', catStyle:'background:var(--pol-bg);color:var(--pol-c)',
+    q:'Will Raila Odinga return to Kenya and announce a 2027 presidential bid before June 2026?',
+    yes:46, vol:2100000,
+    closes:'May 31, 2026',
+    context:'Raila is serving as AU Commission Chairperson. ODM is experiencing internal tensions between the Sifuna and other factions. A comeback announcement would reshape the 2027 race.',
+    resolved:false
+  },
+  {
+    id:6, cat:'politics',
+    catLabel:'Politics', catStyle:'background:var(--pol-bg);color:var(--pol-c)',
+    q:'Will Gachagua formally launch a political party to contest against Ruto in 2027?',
+    yes:63, vol:1750000,
+    closes:'Sep 30, 2026',
+    context:'Rigathi Gachagua was impeached in 2024 and has been building a political base. Ruto vs Gachagua in 2027 is the scenario Jubilee insiders are preparing for.',
+    resolved:false
+  },
+  {
+    id:7, cat:'economics',
+    catLabel:'Economics', catStyle:'background:var(--eco-bg);color:var(--eco-c)',
+    q:'Will fuel pump prices in Nairobi exceed KES 210/litre in the April 2026 EPRA review?',
+    yes:62, vol:1480000,
+    closes:'Apr 14, 2026',
+    context:'Fuel shortages hit Nairobi and Mombasa after the Saudi shipment diversion scandal. The April EPRA review is expected to reflect supply disruptions and market corrections.',
+    resolved:false
+  },
+  {
+    id:8, cat:'economics',
+    catLabel:'Economics', catStyle:'background:var(--eco-bg);color:var(--eco-c)',
+    q:'Will SHA (Social Health Authority) be operational in all 47 counties without suspension by July 2026?',
+    yes:27, vol:890000,
+    closes:'Jul 1, 2026',
+    context:'SHA suspended Bungoma West Hospital for 90 days over fraudulent billing. More private facilities are dropping the insurer. Nationwide operational stability looks doubtful.',
+    resolved:false
+  },
+  {
+    id:9, cat:'economics',
+    catLabel:'Economics', catStyle:'background:var(--eco-bg);color:var(--eco-c)',
+    q:'Will the Kenya shilling trade below KES 125 to the USD before December 2026?',
+    yes:33, vol:640000,
+    closes:'Dec 1, 2026',
+    context:'The KES has recovered significantly from 2024 lows. Continued stability depends on forex inflows, fuel import costs, and CBK policy.',
+    resolved:false
+  },
+  {
+    id:10, cat:'sport',
+    catLabel:'Sports', catStyle:'background:var(--sport-bg);color:var(--sport-c)',
+    q:'Will Kenya win at least one gold medal at the 2026 African Athletics Championship?',
+    yes:83, vol:1230000,
+    closes:'Jun 15, 2026',
+    context:'Kenya has dominated African athletics for decades. Middle and long-distance events remain Kenya\'s strongest categories.',
+    resolved:false
+  },
+  {
+    id:11, cat:'sport',
+    catLabel:'Sports', catStyle:'background:var(--sport-bg);color:var(--sport-c)',
+    q:'Will Harambee Stars qualify for AFCON 2027?',
+    yes:29, vol:710000,
+    closes:'Nov 30, 2026',
+    context:'Kenya\'s football qualification history is challenging but improving. The departure of Victor Wanyama from international football leaves a gap in leadership.',
+    resolved:false
+  },
+  {
+    id:12, cat:'culture',
+    catLabel:'Culture', catStyle:'background:var(--cult-bg);color:var(--cult-c)',
+    q:'Will a Kenyan artist appear in the Spotify Africa Top 10 chart before end of 2026?',
+    yes:54, vol:480000,
+    closes:'Dec 31, 2026',
+    context:'Kenyan Afropop and gengetone are gaining continental traction. Several artists have come close. 2026 could be the breakthrough year.',
+    resolved:false
+  },
+  {
+    id:13, cat:'politics',
+    catLabel:'Politics', catStyle:'background:var(--pol-bg);color:var(--pol-c)',
+    q:'Will the IEBC complete re-registration of all pre-2012 voters before the 2027 elections?',
+    yes:31, vol:560000,
+    closes:'Dec 31, 2026',
+    context:'IEBC ordered ~12M voters who registered before 2012 to re-register. Logistics and public resistance are significant obstacles. 344,000 new voters registered in the first drive.',
+    resolved:false
+  }
+];
+
+function fmtVol(v){
+  if(v>=1000000) return 'KES '+(v/1000000).toFixed(1)+'M traded';
+  return 'KES '+(v/1000).toFixed(0)+'K traded';
+}
+
+function catOf(id){return markets.find(function(m){return m.id===id})}
+
+function render(){
+  var filtered = markets.filter(function(m){
+    if(activeFilter==='all') return true;
+    if(activeFilter==='my') return positions.some(function(p){return p.mid===m.id});
+    return m.cat===activeFilter;
+  });
+
+  var html='';
+  if(activeFilter==='my' && positions.length===0){
+    html='<div style="text-align:center;padding:40px 0;color:var(--muted);font-size:14px">No positions yet.<br>Place a prediction to see it here.</div>';
+  } else if(filtered.length===0){
+    html='<div style="text-align:center;padding:40px 0;color:var(--muted);font-size:14px">No markets in this category yet.</div>';
+  } else {
+    filtered.forEach(function(m){
+      var isOpen = openId===m.id;
+      var side = selectedSide[m.id]||'yes';
+      var stake = stakeVals[m.id]||100;
+      var price = side==='yes'?m.yes:(100-m.yes);
+      var payout = stake>0?Math.round(stake/(price/100)):0;
+      var fee = Math.round(stake*0.04);
+      var net = payout - fee;
+      var myPos = positions.find(function(p){return p.mid===m.id});
+
+      html += '<div class="mcard'+(isOpen?' open':'')+'" id="mc-'+m.id+'">';
+      html += '<div class="mcard-body" onclick="toggle('+m.id+')">';
+      html += '<div class="cat-row"><span class="cat-tag" style="'+m.catStyle+'">'+m.catLabel.toUpperCase()+'</span><span class="vol-txt">'+fmtVol(m.vol)+'</span></div>';
+      html += '<div class="mq">'+m.q+'</div>';
+      html += '<div class="prob-row"><span class="prob-yes">YES '+m.yes+'%</span><div class="prob-track"><div class="prob-fill" style="width:'+m.yes+'%"></div></div><span class="prob-no">NO '+(100-m.yes)+'%</span></div>';
+      html += '<div class="btn-row"><button class="yes-btn" onclick="event.stopPropagation();openTrade('+m.id+',\'yes\')">YES '+m.yes+'%</button><button class="no-btn" onclick="event.stopPropagation();openTrade('+m.id+',\'no\')">NO '+(100-m.yes)+'%</button></div>';
+      html += '<div class="closes">Closes '+m.closes+'</div>';
+      if(myPos){html+='<div style="margin-top:8px;font-size:12px;padding:6px 10px;background:var(--bg3);border-radius:8px;color:var(--accent)">Your position: <b>'+myPos.side.toUpperCase()+'</b> &middot; KES '+myPos.stake+' staked</div>';}
+      html += '</div>';
+
+      if(isOpen){
+        html += '<div class="trade-panel">';
+        html += '<div class="tp-title">PLACE YOUR PREDICTION</div>';
+        html += '<div class="context-box">'+m.context+'</div>';
+        html += '<div class="side-row">';
+        html += '<button class="side-btn'+(side==='yes'?' yes-sel':'')+'" onclick="setSide('+m.id+',\'yes\')">YES ('+m.yes+'%)</button>';
+        html += '<button class="side-btn'+(side==='no'?' no-sel':'')+'" onclick="setSide('+m.id+',\'no\')">NO ('+(100-m.yes)+'%)</button>';
+        html += '</div>';
+        html += '<div class="stake-label">Stake amount (KES)</div>';
+        html += '<input class="stake-input" type="number" id="si-'+m.id+'" value="'+stake+'" min="20" step="10" oninput="updateStake('+m.id+',this.value)">';
+        html += '<div class="quick-stakes">';
+        [50,100,200,500,1000].forEach(function(q){
+          html += '<div class="qs" onclick="setStake('+m.id+','+q+')">'+q+'</div>';
+        });
+        html += '</div>';
+        html += '<div class="payout-box">';
+        html += '<div class="prow"><span>Side</span><b>'+(side==='yes'?'YES':'NO')+'</b></div>';
+        html += '<div class="prow"><span>Implied odds</span><b>'+price+'%</b></div>';
+        html += '<div class="prow"><span>Stake</span><b>KES '+stake+'</b></div>';
+        html += '<div class="prow"><span>Gross payout if correct</span><b>KES '+payout+'</b></div>';
+        html += '<div class="prow"><span>Platform fee (4%)</span><b>KES '+fee+'</b></div>';
+        html += '<div class="prow highlight"><span>Net payout if correct</span><b>KES '+net+'</b></div>';
+        html += '</div>';
+        html += '<button class="confirm-btn" onclick="placeBet('+m.id+')">Confirm — KES '+stake+' on '+(side==='yes'?'YES':'NO')+'</button>';
+        html += '</div>';
+      }
+
+      html += '</div>';
+    });
+  }
+
+  document.getElementById('mkts').innerHTML = html;
+  updateStats();
+}
+
+function toggle(id){openId = openId===id?null:id; render();}
+function openTrade(id,side){selectedSide[id]=side; openId=id; render(); setTimeout(function(){document.getElementById('mc-'+id).scrollIntoView({behavior:'smooth',block:'nearest'})},50);}
+function setSide(id,s){selectedSide[id]=s; render();}
+function updateStake(id,v){stakeVals[id]=Math.max(0,parseInt(v)||0); render();}
+function setStake(id,v){stakeVals[id]=v; var el=document.getElementById('si-'+id); if(el)el.value=v; render();}
+
+function placeBet(id){
+  var m = catOf(id);
+  var side = selectedSide[id]||'yes';
+  var stake = stakeVals[id]||100;
+  if(stake<20){toast('Minimum stake is KES 20'); return;}
+  if(stake>balance){toast('Not enough balance!'); return;}
+  balance -= stake;
+  var price = side==='yes'?m.yes:(100-m.yes);
+  var payout = Math.round(stake/(price/100));
+  var fee = Math.round(stake*0.04);
+  positions.push({mid:id,q:m.q,side:side,stake:stake,price:price,payout:payout-fee,market:m});
+  totalVol += stake;
+  m.yes = Math.min(94, Math.max(6, m.yes+(side==='yes'?2:-2)));
+  openId = null;
+  toast('Placed! '+side.toUpperCase()+' on '+m.q.substring(0,35)+'…');
+  render();
+}
+
+function filter(cat, el){
+  activeFilter = cat;
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on')});
+  el.classList.add('on');
+  openId = null;
+  render();
+}
+
+function updateStats(){
+  document.getElementById('bal').textContent = 'KES ' + balance.toLocaleString();
+  document.getElementById('pos-count').textContent = positions.length;
+  var vol = markets.reduce(function(s,m){return s+m.vol},0) + totalVol;
+  document.getElementById('total-vol').textContent = 'KES '+(vol/1000000).toFixed(1)+'M';
+  document.getElementById('mkt-count').textContent = markets.length;
+}
+
+function toast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastT);
+  window._toastT = setTimeout(function(){t.classList.remove('show')},2800);
+}
+
+render();
+</script>
+</body>
+</html>
